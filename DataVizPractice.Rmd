@@ -117,3 +117,36 @@ lizard_counts_new <- lizard_counts %>%
 #can check new factor's levels using levels()
 ```
 
+## Axis scale breaks, limits, and labels 
+```{r}
+ggplot(data = lizards, aes(x = total_length, y = weight))+
+  geom_point(alpha = 0.5, color = "dodgerblue4")+
+  theme_classic()+
+  scale_x_continuous(breaks = c(0, 10, 50, 5000),
+                     lim = c(0, 500),
+                     expand = c(0, 0)) + #prevent expansion beyond limits 
+  scale_y_continuous(lim = c(min(lizards$weight), max(lizards$weight)))
+  
+#what type of variables are on the axes ? continues, discrete, or date ?
+#breaks = tick mark breaks. you can create the vector manually, using seq(), etc. 
+```
+Transform the date column to class Date then find counts by date 
+```{r}
+lizards_counts <- lizards %>% 
+  mutate(date = lubridate::mdy(date)) %>% #either attach library(lubridate) or specify the package
+  group_by(date) %>% 
+  summarize(count = n())
+
+lizards_counts
+```
+
+```{r}
+ggplot(data = lizards_counts, aes(x = date, y = count))+
+  geom_line()+
+  theme_classic()+
+  labs(x = "Time", 
+       y = "Lizard Frequency")+
+  scale_x_date(breaks = scales::breaks_width("3 years"), #or scale_x_date(date_breaks = "3 years")
+               labels = scales::label_date("%y"))  #or date_labels = "%y"
+```
+
