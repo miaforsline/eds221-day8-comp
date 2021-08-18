@@ -149,4 +149,48 @@ ggplot(data = lizards_counts, aes(x = date, y = count))+
   scale_x_date(breaks = scales::breaks_width("3 years"), #or scale_x_date(date_breaks = "3 years")
                labels = scales::label_date("%y"))  #or date_labels = "%y"
 ```
+## Scale colors 
+```{r}
+ggplot(data = lizards, aes(x = total_length, y = weight)) + 
+  geom_point(aes(color = weight)) +
+  #scale_color_gradient(low = "red", high = "navy") choose low and high continuous gradient colors
+  #scale_color_gradientn(colors = c("orange", "purple", "red", "black")) #choose more than 2 gradient colors 
+  scale_color_stepsn(colors = c("green", "blue", "purple", "pink"),
+                     breaks = seq(from = 0, to = 100, by = 20)) #color steps rather than a gradient 
+```
+### Update a color scheme using a palette in paletteer
+```{r}
+lizards_fct <- lizards %>% 
+  mutate(common_name = fct_reorder(.f = common_name, .x = total_length, .fun = median)) #convert common_name to a factor ordered by total length median 
+
+ggplot(data = lizards_fct, aes(y = common_name, x = total_length))+
+  geom_boxplot(aes(fill = common_name), show.legend = FALSE)+
+  #geom_jitter(alpha = 0.25, aes(color = common_name))+
+  theme_classic()+
+  scale_fill_paletteer_d(palette = "palettetown::baltoy") #select paleteer package::palette
+  
+#View(palettes_d_names)
+```
+
+```{r}
+ggplot(data = lizards, aes(x = total_length, y = weight))+
+  geom_point()+
+  theme(
+    #panel.background = element_rect(fill = "yellow", 
+    #                                color = "purple",
+    #                                size = 10),
+    #panel.grid.major.x = element_line(color = "red"), #applies to x gridlines only 
+    #panel.grid = element_line(color = "blue"), #applies to x and y gridlines 
+    #panel.grid.major.y = element_line(color = "orange"),
+    panel.grid = element_blank(), #remove gridlines 
+    
+    plot.background = element_rect(fill = "cyan"), #fill background panel
+    
+    axis.text.x = element_text(color = "orange"),
+    
+    axis.title = element_text(color = "yellow", size = 15)
+  )
+
+#most specific level > general commands
+```
 
