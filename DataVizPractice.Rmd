@@ -1,0 +1,119 @@
+---
+title: "DataViz"
+author: "Mia Forsline"
+date: "8/18/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#general use
+library(tidyverse)
+library(here)
+library(janitor)
+
+#data viz packages 
+library(patchwork)
+library(ggrepel)
+library(gghighlight)
+library(paletteer)
+library(ggExtra)
+library(ggbeeswarm)
+
+#contains data
+library(gapminder)
+
+library(sf)
+```
+
+## Get the lizards data
+```{r}
+#use getwd() or here() to identify working directory 
+lizards <- read_csv(here("data_tidy", "lizards.csv"))
+```
+
+## Histogram of lizard weight
+```{r}
+ggplot(data = lizards, aes(x = weight))+
+  geom_histogram(fill = "lavender", 
+                 color = "mediumpurple4",
+                 size = 0.75,
+                 linetype = "dashed")+
+  theme_classic()+
+  labs(x = "Lizard Weight (g)")
+```
+## Scatterplot 
+```{r}
+#shape = 0 - 25 
+ggplot(data = lizards, aes(x = total_length, y = weight))+
+  geom_point(alpha = 0.5, 
+             shape = 100, 
+             color = "lightcoral",
+             size = 3)+
+  theme_classic()+
+  labs(x = "Lizard Length", 
+       y = "Lizard Weight (g)")
+```
+## Bubble plot 
+```{r}
+ggplot(data = lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = common_name, 
+                 size = total_length), 
+             alpha = 0.25,
+             shape = 18) +
+  theme(legend.position = "none")
+```
+
+```{r}
+#facet_grid = a true grid that will create a combination of the intersections of the variables 
+#facet_wrap = puts all the graphs in a row then wraps to the next line 
+
+ggplot(data = lizards, aes(x = total_length, y = weight))+ 
+  geom_point()+
+  facet_wrap(.~common_name, ncol = 2) #can choose how many columns before wrapping to the next line
+
+ggplot(data = lizards, aes(x = total_length, y = weight))+ 
+  geom_point(aes(color = sex, shape = tail), alpha = 0.5)+
+  facet_grid(sex ~ tail) #rows ~ columns
+#populates all intersections of the grid 
+```
+
+## ggplot default order for characters is alphabetical - how can we choose other orders ? 
+### Find total lizard counts by common name 
+```{r}
+lizard_counts <- lizards %>% 
+  group_by(common_name) %>% 
+  summarize(count = n())
+
+lizard_counts
+
+#another way to find the count 
+lizard_counts <- lizards %>% dplyr::count(common_name)
+
+lizard_counts_2 <- lizards %>% count(common_name, tail) #can group counts by multiple variables 
+```
+
+```{r}
+ggplot(data = lizard_counts, aes(y = fct_reorder(common_name, count), x = count))+ #long y-axis common names are readable with sideways columns 
+  geom_col()+
+  theme_classic()+
+  labs(y = "Lizard Common Names", 
+       x = "Count")
+
+#can use coord_flip() to switch x and y axes OR just specify x and y axes 
+
+#it's not logical to have the lizard names in alphabetical order (which is the default)
+#factors = character/number with meaningful order assigned to discrete groups 
+#so let's turn the names into factors and have their levels assigned based on their count values so we can order them from low to high 
+#forcats::fct_reorder(object to convert, external variable to base the level based on) to convert to a factor and reorder the levels based on a value in another variable 
+#forcats is part of the tidyverse 
+```
+
+Try converting common_name to an ordered factor outside of ggplot 
+```{r}
+lizard_counts_new <- lizard_counts %>% 
+  mutate(common_name = fct_reorder(common_name, count))
+#can check new factor's levels using levels()
+```
+
