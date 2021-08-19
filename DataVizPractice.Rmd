@@ -194,3 +194,124 @@ ggplot(data = lizards, aes(x = total_length, y = weight))+
 #most specific level > general commands
 ```
 
+## ggrepel - for labeling plots 
+```{r}
+ww_lizards <- lizards %>% 
+  filter(common_name == "western whiptail" & site == "sand")
+
+ggplot(data = ww_lizards, aes(x = total_length, y = weight))+ 
+  geom_point()+
+  geom_text_repel(aes(label = toe_num), #add label text to each point but not on top of each point 
+                  size = 3,
+                  max.overlaps = 20) 
+```
+
+### use gapminder data 
+```{r}
+gap <- gapminder %>% 
+  filter(continent == "Europe" & year == "2007")
+
+ggplot(data = gap, aes(x = gdpPercap, y = lifeExp))+
+  geom_point()+
+  geom_text_repel(aes(label = country), 
+                  size = 3, 
+                  max.overlap = 30)+
+  theme_classic()
+```
+
+## gghighlight - highlight data that meet conditions you set 
+```{r}
+p <- ggplot(lizards, aes(x = total_length, y = weight))+
+  geom_point()
+
+p + gghighlight(toe_num == 250, label_key = toe_num)
+```
+
+```{r}
+q <- ggplot(lizards, aes(x = total_length, y = weight))+
+  geom_line(aes(color = common_name))
+
+q + gghighlight(max(weight) > 30)
+```
+
+## patchwork for compound figures 
+```{r}
+p | q #puts both graphs side by side using patchwork 
+
+(p | q) / q #use PEMDAS to place p next to q all over q 
+
+p / q / p & theme_classic() #use & to apply themes to all figures 
+
+#can use calPlot package in addition to patchwork 
+```
+
+## A few new graph types
+### Marginal plots using ggExtra()
+```{r}
+whiptails <- lizards %>% 
+  filter(common_name == "western whiptail") %>% 
+  drop_na(total_length, weight) #delete complete row if NAs are present in total_length or weight
+
+ggplot(data = whiptails, aes(x = total_length, y = weight))+
+  geom_point()+
+  geom_rug() #rug plots = puts tickmarks at any value in order to see distribution of values. not always useful because it doesn't show density at each increment 
+
+```
+### Marginal plot w/boxplots
+```{r}
+my_plot <- ggplot(data = whiptails, aes(x = total_length, y = weight))+
+  geom_point(aes(color = sex), size = 2)+
+  scale_color_manual(values = c("cyan4", "black", "goldenrod"),
+                     name = "Sex:", 
+                     labels = c("female", "juvenile", "male"))+
+  
+  theme_classic()+
+  theme(legend.position = "bottom")
+
+ggMarginal(my_plot, type = "boxplot", groupColour = TRUE)
+  
+```
+
+## Beeswarm plot 
+```{r}
+ggplot(data = whiptails, aes(x = sex, y = weight))+
+  geom_beeswarm()+
+  #geom_violin(alpha = 0.5)+
+  geom_boxplot(alpha = 0.5)
+```
+
+## A heat map w/geom_tile()
+```{r}
+lizard_counts <- lizards %>% 
+  mutate(date = lubridate::mdy(date)) %>% #convert to class date
+  mutate(year = lubridate::year(date)) %>% #pull the year from the date and create a new column 
+  group_by(year, common_name) %>% 
+  summarize(count = n())
+#can also use count(year, common_name) instead of group_by() + summarize(n())
+lizard_counts
+```
+#3D plot - showing year, common name, and count 
+```{r}
+ggplot(data = lizard_counts, aes(x = year, y = common_name))+
+  geom_tile(aes(fill = count)) +
+  geom_text(aes(label = count), color = "white", size = 3) + #we want the label to be in the middle of each tile, so no need for teom_text_repel
+  #scale_fill_gradientn(colors = c("goldenrod", "orange", "darkred"))+ #color gradient with as many colors as we want 
+  scale_fill_viridis_c() #continuous scale color-blind-friendly colors 
+```
+
+### Make a map using `sf` (simple features) to work w/spatial data 
+```{r}
+jornada_veg <- read_sf(here("data_raw", "spatial_vegetation", "doc.kml")) %>% 
+  select(Name) %>%  #sticky geometry column stays even when we select Name col
+  clean_names()
+
+ggplot(data = jornada_veg)+
+  geom_sf(aes(fill = name),  #plot simple features 
+          color = NA) + #can change borders around polygons 
+  scale_fill_paletteer_d(palette = "palettetown::vaporeon") + #discrete 
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       fill = "Dominant vegetation")+
+  theme_void()
+```
+
